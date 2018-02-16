@@ -1,0 +1,11 @@
+{
+  "name": "snakefront",
+  "description": "Snakefront: Get Booked.",
+  "keywords": [
+    "battlesnake",
+    "checkfront",
+    "snakefront"
+  ],
+  "website": "http://snakefront.herokuapp.com",
+  "repository": "https://github.com/Nebual/snakefront"
+}

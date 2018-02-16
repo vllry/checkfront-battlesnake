@@ -1,9 +1,9 @@
-version: '3'
-services:
-  nginx:
-    image: nginx
-    ports:
-    - "80:8080"
-  gameserver:
-    image: sendwithus/battlesnake-server
+version: "2"
 
+services:
+  ui:
+    container_name: snake-main
+    build:
+      context: .
+    ports:
+      - "8081:8081"
