@@ -10,8 +10,6 @@ import pathfinding
 from heatmap import print_heatmap, gen_heatmap
 import util
 
-snake_id = ''
-
 taunts = ['get_Booked!', 'brought_to_you_by_Checkfront!', 'generic_Taunt!', 'zort_narf_poit_Egad!', 'you_are_not_Prepared!', 'ill_get_you_my_Pretty!', 'hiss_CamelNoise!', 'flee_Mortals!']
 
 starvation_Limit 				= 25
@@ -24,6 +22,8 @@ follow_Cost_Limit               = 200
 idle_Cost_Limit 				= 100
 server_Port						= '8081'
 name 							= 'camel_Snake'
+
+PRINT_REQUESTS = False
 
 if len(sys.argv) > 2:
 	starvation_Limit 				= int(sys.argv[1])   #25
@@ -76,11 +76,13 @@ def start():
 @bottle.post('/move')
 def move():
 	print "\n\n"
-	data = bottle.request.json
-
-	find_our_snake(data)
-	# print(data) # Uncomment this to save a full game state
-	return main_logic(data)
+	request_data_2018 = bottle.request.json
+	
+	request_data = reformat_request_to_2017(request_data_2018)
+	
+	if PRINT_REQUESTS:
+		print(json.dumps(request_data, sort_keys=True, indent=4, separators=(',',': '))) # Uncomment this to save a full game state
+	return main_logic(request_data)
 
 def main_logic(data):
 	time_start_request = time.clock()
@@ -119,7 +121,7 @@ def get_move(data, head, heatmap, graph):
 
 	longestSnakeLength = 0
 	for snake in data['snakes']:
-		if snake['id'] != snake_id and len(snake['coords']) > longestSnakeLength:
+		if snake['id'] != data['oursnake']['id'] and len(snake['coords']) > longestSnakeLength:
 			longestSnakeLength = len(snake['coords'])
 
 	# Worst case scenario: Go 1 square in a direction that doesn't immediately kill it
@@ -260,17 +262,19 @@ def get_direction_from_target_headpos(head, move):
 		nextmove = 'left'
 	return nextmove
 
-
-def find_our_snake(request_data):
-	global snake_id
-	snake_id = request_data['you']
-	request_data['oursnake'] = dict()
-	request_data['ourhead'] = [0, 0]
-	for snake in request_data['snakes']:
-		if snake['id'] == snake_id:
-			request_data['ourhead'] = snake['coords'][0]
-			request_data['oursnake'] = snake
-
+def reformat_request_to_2017(request_data_2018):
+	request_data = request_data_2018.copy()
+	request_data["snakes"] = request_data_2018["snakes"]["data"]
+	request_data["food"] = [[point["x"],point["y"]] for point in request_data_2018["food"]["data"]]
+	for snake in request_data["snakes"] + [request_data_2018["you"]]:
+		snake["coords"] = [[point["x"],point["y"]] for point in snake["body"]["data"]]
+		del snake["body"]
+		snake["health_points"] = snake["health"]
+		del snake["health"]
+	request_data['oursnake'] = request_data["you"]
+	request_data['ourhead'] = request_data["you"]["coords"][0]
+	del request_data["you"]
+	return request_data
 
 @bottle.post('/end')
 def end():

@@ -56,7 +56,7 @@ def gen_heatmap(requestdata, maxturns=9, use_rings=True):
 				state['food_cache'] = []
 				for food_coords in state['food']:
 					state['food_cache'].append(food_coords[0] * 1000 + food_coords[1])
-				if snake['id'] != state['you']:
+				if snake['id'] != state['oursnake']['id']:
 					# parse heat around the head
 					we_are_bigger = (len(coords) < oursnakeLength)
 					food_found = fractal_heat(state, heatmap, width, height, coords[0][0], coords[0][1], coords[1][0], coords[1][1], turn - we_are_bigger, (turn == 1 and 100.0 or 33.0))
