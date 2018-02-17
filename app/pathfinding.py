@@ -19,7 +19,7 @@ class Board:
 
     @staticmethod
     def _xyToId(x, y):
-        return str(x) + "," + str(y)
+        return (x, y),
 
     def __init__(self, HeatMap):
         height = len(HeatMap[0])
@@ -56,6 +56,37 @@ class Board:
             weight='weight'
         )
         print path
+        return Path(self._graph, path)
+
+
+class Path:
+    def __init__(self, graph, nodeList):
+        self._nodes = nodeList
+
+        self.length = len(nodeList)
+        self.danger = 0
+        self.nextCoord = coord.Coord(nodeList[1][0], nodeList[1][1])
+        self.nextDirection = "????"
+        if self.nextCoord.x == nodeList[0][0]:
+            if self.nextCoord.y > nodeList[0][1]:
+                self.nextCoord = "up"
+            else:
+                self.nextCoord = "down"
+        elif self.nextCoord.y == nodeList[0][1]:
+            if self.nextCoord.x > nodeList[0][0]:
+                self.nextCoord = "right"
+            else:
+                self.nextCoord = "left"
+
+        weights = nx.get_edge_attributes(graph, 'weight')
+        print weights
+        for nodeSeq in range(0, self.length-1):
+            cur = nodeList[nodeSeq]
+            next = nodeList[nodeSeq+1]
+            if (cur, next) in weights:
+                self.danger += weights[(cur, next)]
+            else:
+                self.danger += weights[(next, cur)]
 
     # def cheapest_path(self, heatmap, head_pos, target_pos, data):
     #     if not util.is_valid_move(target_pos, data):
