@@ -43,10 +43,8 @@ class Board:
                 plusY = Board._xyToId(x, y+1)
                 if x != width -1:
                     self._graph.add_edge(curId, plusX, weight=HeatMap[x][y] + HeatMap[x+1][y])
-                    print "Linked " + curId + " to " + plusX
                 if y != height -1:
                     self._graph.add_edge(Board._xyToId(x, y), plusY, weight=HeatMap[x][y] + HeatMap[x][y+1])
-                    print "Linked " + curId + " to " + plusY
 
     def path(self, currentCoord, targetCoord):
         path = nx.shortest_path(
@@ -55,7 +53,6 @@ class Board:
             target=Board._xyToId(targetCoord.x, targetCoord.y),
             weight='weight'
         )
-        print path
         return Path(self._graph, path)
 
 
@@ -63,23 +60,24 @@ class Path:
     def __init__(self, graph, nodeList):
         self._nodes = nodeList
 
+        print nodeList
         self.length = len(nodeList)
         self.danger = 0
-        self.nextCoord = coord.Coord(nodeList[1][0], nodeList[1][1])
+        self.nextCoord = coord.Coord(nodeList[1][0][0], nodeList[1][0][1])
+
         self.nextDirection = "????"
-        if self.nextCoord.x == nodeList[0][0]:
-            if self.nextCoord.y > nodeList[0][1]:
-                self.nextCoord = "up"
+        if self.nextCoord.x == nodeList[0][0][0]:
+            if self.nextCoord.y > nodeList[0][0][1]:
+                self.nextDirection = "up"
             else:
-                self.nextCoord = "down"
-        elif self.nextCoord.y == nodeList[0][1]:
-            if self.nextCoord.x > nodeList[0][0]:
-                self.nextCoord = "right"
+                self.nextDirection = "down"
+        elif self.nextCoord.y == nodeList[0][0][1]:
+            if self.nextCoord.x > nodeList[0][0][0]:
+                self.nextDirection = "right"
             else:
-                self.nextCoord = "left"
+                self.nextDirection = "left"
 
         weights = nx.get_edge_attributes(graph, 'weight')
-        print weights
         for nodeSeq in range(0, self.length-1):
             cur = nodeList[nodeSeq]
             next = nodeList[nodeSeq+1]
