@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import networkx as nx
-import util
+import coord
 
 
 # HOW TO USE:
@@ -14,54 +14,66 @@ import util
 # Heatmap is an array of the board, with higher values being less safe.
 # Headpos is the [column, row] of the snake head.
 
-# RETURNS a networkx graph
-def graphify(HeatMap):
-    height = len(HeatMap[0])
-    width = len(HeatMap)
-    g = nx.Graph()
 
-    g.add_nodes_from(range(0, height*width))
+class Board:
 
-    # Add vertical edges
-    for column in range(0, width):
-        for row in range(0, height-1):
-            cur = column*height + row
-            next = cur + 1
-            weight = HeatMap[column][row] + HeatMap[column][row+1]
-            # print str(cur) + " Add edge between [" + str(column) + "][" + str(row) + "] and [" + str(column) + "][" + str(row+1) + "], weight=" + str(weight)
-            g.add_edge(cur, next)
-            g[cur][next]['weight'] = weight
+    @staticmethod
+    def _xyToId(x, y):
+        return str(x) + "," + str(y)
 
-    # Add horizontal edges
-    for row in range(0, height):
-        for column in range(0, width-1):
-            cur = column*height + row
-            next = cur + height
-            weight = HeatMap[column][row] + HeatMap[column+1][row]
-            # print str(next) + " Add edge between [" + str(column) + "][" + str(row) + "] and [" + str(column+1) + "][" + str(row) + "], weight=" + str(weight)
-            g.add_edge(cur, next)
-            g[cur][next]['weight'] = weight
+    def __init__(self, HeatMap):
+        height = len(HeatMap[0])
+        width = len(HeatMap)
+        print "height :" + str(height)
+        print "width :" + str(width)
 
-    return g
+        self._graph = nx.Graph()
 
+        for x in range(0, width):
+            print(x)
+            for y in range(0, height):
+                print Board._xyToId(x, y)
+                self._graph.add_node(Board._xyToId(x, y))
 
-def cheapest_path(G, heatmap, head_pos, target_pos, data):
-    if not util.is_valid_move(target_pos, data):
-        return {
-            "path": [],
-            "length": 0,
-            "nextPos": head_pos,
-            "cost": 9998
-        }
-    height = data['height']
-    path = nx.shortest_path(G, source =head_pos[0] * height + head_pos[1], target=target_pos[0] * height + target_pos[1], weight='weight')
-    pos_of_next_move = [path[1] // height, path[1] % height]
-    weight = 0
-    for i in range(1, len(path)):
-        weight += heatmap[path[i] // height][path[i] % height]  # Get weight of move
-    return {
-        "path": path,
-        "length": len(path),
-        "nextPos": pos_of_next_move,
-        "cost": weight
-    }
+        # Add vertical edges
+        for x in range(0, width):
+            for y in range(0, height):
+                curId = Board._xyToId(x, y)
+                plusX = Board._xyToId(x+1, y)
+                plusY = Board._xyToId(x, y+1)
+                if x != width -1:
+                    self._graph.add_edge(curId, plusX, weight=HeatMap[x][y] + HeatMap[x+1][y])
+                    print "Linked " + curId + " to " + plusX
+                if y != height -1:
+                    self._graph.add_edge(Board._xyToId(x, y), plusY, weight=HeatMap[x][y] + HeatMap[x][y+1])
+                    print "Linked " + curId + " to " + plusY
+
+    def path(self, currentCoord, targetCoord):
+        path = nx.shortest_path(
+            self._graph,
+            source=Board._xyToId(currentCoord.x, currentCoord.y),
+            target=Board._xyToId(targetCoord.x, targetCoord.y),
+            weight='weight'
+        )
+        print path
+
+    # def cheapest_path(self, heatmap, head_pos, target_pos, data):
+    #     if not util.is_valid_move(target_pos, data):
+    #         return {
+    #             "path": [],
+    #             "length": 0,
+    #             "nextPos": head_pos,
+    #             "cost": 9998
+    #         }
+    #     height = data['height']
+    #     path = nx.shortest_path(self._graph, source =head_pos[0] * height + head_pos[1], target=target_pos[0] * height + target_pos[1], weight='weight')
+    #     pos_of_next_move = [path[1] // height, path[1] % height]
+    #     weight = 0
+    #     for i in range(1, len(path)):
+    #         weight += heatmap[path[i] // height][path[i] % height]  # Get weight of move
+    #     return {
+    #         "path": path,
+    #         "length": len(path),
+    #         "nextPos": pos_of_next_move,
+    #         "cost": weight
+    #     }

@@ -21,7 +21,6 @@ class TimerPrint(Timer):
 
 
 def is_valid_move(possible_move, data):
-
 	# at round 1, our head == our tail, so run this check before the next one
 	if possible_move == data['oursnake']['coords'][0]:
 		return False
@@ -35,6 +34,7 @@ def is_valid_move(possible_move, data):
 
 	if possible_move[0] < 0 or possible_move[0] >= data['width'] or possible_move[1] < 0 or possible_move[1] >= data['height']:
 		return False
+
 	return True
 
 def dist(a, b):
