@@ -16,8 +16,8 @@ starvation_Limit 				= 25
 starvation_Cost 				= 100
 hunger_Limit 					= 50
 hunger_Cost 					= 70
-preferred_Snek_Length_modifer 	= 0
-dominace_Length 				= 0
+preferred_Snek_Length_modifer 	= -2 # ie 2 would make our snake try to get 2 longer than any other snake
+greedy_food_Cost 				= 40
 follow_Cost_Limit               = 200
 idle_Cost_Limit 				= 100
 server_Port						= '8081'
@@ -31,7 +31,7 @@ if len(sys.argv) > 2:
 	hunger_Limit 					= int(sys.argv[3])   #50
 	hunger_Cost 					= int(sys.argv[4])   #70
 	preferred_Snek_Length_modifer 	= int(sys.argv[5])    #2
-	dominace_Length 				= int(sys.argv[6])   #40
+	greedy_food_Cost 				= int(sys.argv[6])   #40
 	follow_Cost_Limit 				= int(sys.argv[7])  #200
 	idle_Cost_Limit 				= int(sys.argv[8])  #100
 	server_Port						= sys.argv[9] 		#8080
@@ -134,9 +134,9 @@ def get_move(data, head, heatmap, graph):
 	elif (int(data['oursnake']['health_points']) < hunger_Limit and food_cost < hunger_Cost):
 		move = food_move
 		move_name = 'food-easy-pickings'
-	elif ((longestSnakeLength + preferred_Snek_Length_modifer) >= len(data['oursnake']['coords']) and food_cost < dominace_Length):
+	elif ((longestSnakeLength + preferred_Snek_Length_modifer) >= len(data['oursnake']['coords']) and food_cost < greedy_food_Cost):
 		move = food_move
-		move_name = 'food-dominate'
+		move_name = 'food-greedy'
 	elif (follow_cost < follow_Cost_Limit):
 		move = follow_move
 		move_name = 'follow'
