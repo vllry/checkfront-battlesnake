@@ -1,4 +1,5 @@
 import time
+import pathfinding
 
 
 class Timer:
@@ -40,6 +41,12 @@ def is_valid_move(possible_move, data):
 def dist(a, b):
 	return abs(b[0] - a[0]) + abs(b[1] - a[1])
 
+class BadPath:
+	def __init__(self):
+		self.cost = 9995
+		self.length = 900
+		self.nextCoord = None
+		self.nextDirection = "NO"
 
 def bad_move():
-	return False, 9995
+	return BadPath()

@@ -4,17 +4,6 @@ import networkx as nx
 import coord
 
 
-# HOW TO USE:
-# Graph = pathfinding.graphify(HeatMap)
-# Then run:
-# pathfinding.cheapest_path(Graph, HeightOfPlayArea, HeadPos, TargetPos)
-# This returns a dict, see below for names/details
-
-
-# Heatmap is an array of the board, with higher values being less safe.
-# Headpos is the [column, row] of the snake head.
-
-
 class Board:
 
     @staticmethod
@@ -22,6 +11,8 @@ class Board:
         return (x, y),
 
     def __init__(self, HeatMap):
+        print "Graphing..."
+
         height = len(HeatMap[0])
         width = len(HeatMap)
         print "height :" + str(height)
@@ -47,6 +38,7 @@ class Board:
                     self._graph.add_edge(Board._xyToId(x, y), plusY, weight=HeatMap[x][y] + HeatMap[x][y+1])
 
     def path(self, currentCoord, targetCoord):
+        print "Looking for path from x", currentCoord.x, "y", currentCoord.y, " to x", targetCoord.x, "y", targetCoord.y
         path = nx.shortest_path(
             self._graph,
             source=Board._xyToId(currentCoord.x, currentCoord.y),
@@ -58,14 +50,18 @@ class Board:
 
 class Path:
     def __init__(self, graph, nodeList):
+        # Todo: "unreachable"
         self._nodes = nodeList
 
         print nodeList
-        self.length = len(nodeList)
-        self.danger = 0
-        self.nextCoord = coord.Coord(nodeList[1][0][0], nodeList[1][0][1])
+        self.cost = 9995
+        if len(nodeList) < 2:
+            return
 
+        self.length = len(nodeList)
+        self.nextCoord = coord.Coord(nodeList[1][0][0], nodeList[1][0][1])
         self.nextDirection = "????"
+
         if self.nextCoord.x == nodeList[0][0][0]:
             if self.nextCoord.y > nodeList[0][0][1]:
                 self.nextDirection = "up"
@@ -82,9 +78,9 @@ class Path:
             cur = nodeList[nodeSeq]
             next = nodeList[nodeSeq+1]
             if (cur, next) in weights:
-                self.danger += weights[(cur, next)]
+                self.cost += weights[(cur, next)]
             else:
-                self.danger += weights[(next, cur)]
+                self.cost += weights[(next, cur)]
 
     # def cheapest_path(self, heatmap, head_pos, target_pos, data):
     #     if not util.is_valid_move(target_pos, data):
