@@ -89,6 +89,7 @@ def main_logic(data):
 
 	with util.TimerPrint("Heatmap Time"):
 		heatmap = gen_heatmap(data)
+		print heatmap
 	with util.TimerPrint("Graph Time"):
 		board = pathfinding.Board(heatmap)
 	print_heatmap(heatmap)
@@ -161,11 +162,11 @@ def get_move(data, head, heatmap, board):
 
 def food(data, head, heatmap, board):
 	best = None
-	cost = 9995
+	cost = 9996
 
 	for snack in data['food']:
 		path = board.path(coord.Coord(head[0], head[1]), coord.Coord(snack[0], snack[1]))
-
+		print(path.cost, path.nextCoord, path.nextDirection)
 		heat = path.cost
 		if heat < cost:
 			best = path

@@ -1,5 +1,6 @@
 import copy, math
 import util
+import constants
 
 def default_heatmap(width, height):
 	heatmap = []
@@ -80,7 +81,7 @@ def gen_heatmap(requestdata, maxturns=9, use_rings=True):
 				if heat != 1:
 					if not use_rings or ((abs(x-oursnakeHead[0]) + abs(y-oursnakeHead[1])) == turn):
 						final[x][y] += heat
-		final[oursnakeHead[0]][oursnakeHead[1]] = 975
+		final[oursnakeHead[0]][oursnakeHead[1]] = constants.ourHeadWeight
 		final[oursnakeNeck[0]][oursnakeNeck[1]] = 950
 
 	if 'walls' in state:
