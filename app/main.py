@@ -240,10 +240,14 @@ def wiggle(data, board, head, dist=5):
 	best = util.bad_move()
 
 	for x in range(-dist, dist + 1):
+		target_x = head[0] + x
+		if target_x < 0 or target_x >= data['width']: continue
 		for y in range(-dist, dist + 1):
+			target_y = head[1] + y
+			if target_y < 0 or target_y >= data['height']: continue
 			if (abs(x) + abs(y)) == dist:
-				path = board.path(coord.Coord(head[0], head[1]), coord.Coord(head[0] + x, head[1] + y))
-				if path.cost < best.cost and not util.is_valid_move(path, data):
+				path = board.path(coord.Coord(head[0], head[1]), coord.Coord(target_x, target_y))
+				if path.cost < best.cost and util.is_valid_move(path, data):
 					best = path
 
 	return best
