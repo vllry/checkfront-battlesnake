@@ -12,14 +12,16 @@ import util
 
 taunts = ['get_Booked!', 'brought_to_you_by_Checkfront!', 'generic_Taunt!', 'zort_narf_poit_Egad!', 'you_are_not_Prepared!', 'ill_get_you_my_Pretty!', 'hiss_CamelNoise!', 'flee_Mortals!']
 
-starvation_Limit 				= 25
-starvation_Cost 				= 100
-hunger_Limit 					= 50
-hunger_Cost 					= 70
+starvation_Limit 				= 20
+starvation_Cost 				= 120
+famished_Limit					= 35
+famished_Cost 					= 90
+hunger_Limit 					= 60
+hunger_Cost 					= 50
 preferred_Snek_Length_modifer 	= -2 # ie 2 would make our snake try to get 2 longer than any other snake
 greedy_food_Cost 				= 40
-follow_Cost_Limit               = 200
-idle_Cost_Limit 				= 100
+follow_Cost_Limit               = 90
+idle_Cost_Limit 				= 90
 server_Port						= '8081'
 name 							= 'camel_Snake'
 
@@ -129,7 +131,10 @@ def get_move(data, head, heatmap, board):
 
 	if (int(data['oursnake']['health_points']) < starvation_Limit and food_move.cost < starvation_Cost):
 		move = food_move
-		move_name = 'food-hungry'
+		move_name = 'food-starving'
+	elif (int(data['oursnake']['health_points']) < famished_Limit and food_move.cost < famished_Cost):
+		move = food_move
+		move_name = 'food-pretty-hungry'
 	elif (int(data['oursnake']['health_points']) < hunger_Limit and food_move.cost < hunger_Cost):
 		move = food_move
 		move_name = 'food-easy-pickings'
