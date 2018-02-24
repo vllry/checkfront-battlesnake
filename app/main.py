@@ -75,24 +75,23 @@ def start():
 
 @bottle.post('/move')
 def move():
-	print "\n\n"
 	request_data_2018 = bottle.request.json
 	
 	request_data = reformat_request_to_2017(request_data_2018)
 	
+	print "\n\n\n-======- Starting",request_data["oursnake"]["name"], "- move()"
 	if PRINT_REQUESTS:
 		print(json.dumps(request_data, sort_keys=True, indent=4, separators=(',',': '))) # Uncomment this to save a full game state
-	return main_logic(request_data)
+	
+	with util.TimerPrint("-======- End of " + request_data["oursnake"]["name"] + "'s move(). Full Request Time"):
+		return main_logic(request_data)
 
 def main_logic(data):
-	time_start_request = time.clock()
-
 	with util.TimerPrint("Heatmap Time"):
 		heatmap = gen_heatmap(data)
-		print heatmap
+	print_heatmap(heatmap)
 	with util.TimerPrint("Graph Time"):
 		board = pathfinding.Board(heatmap)
-	print_heatmap(heatmap)
 
 	rand = random.randint(0, 2)
 	taunt = taunts[rand]
@@ -108,7 +107,6 @@ def main_logic(data):
 	if random.randint(0, 10) == 0:
 		response['taunt'] = taunt
 
-	print "\nFull Request Time:", str(round((time.clock() - time_start_request) * 1000, 3)) + "ms"
 	return response
 
 
@@ -118,7 +116,7 @@ def get_move(data, head, heatmap, board):
 	follow_move = follow(data, head, board)
 	idle_move = idle(board, data, head)
 	food_move = food(data, head, heatmap, board)
-	print "follow", follow_move.cost, "idle", idle_move.cost, "food", food_move.cost
+	print "Possible Move Thoughts: follow", follow_move.cost, "idle", idle_move.cost, "food", food_move.cost
 
 	longestSnakeLength = 0
 	for snake in data['snakes']:
@@ -148,14 +146,13 @@ def get_move(data, head, heatmap, board):
 		# Running out of options... find the longest path
 		with util.TimerPrint("Wiggle time"):
 			for dist in range(MAX_WIGGLE, 1, -1):
-				wiggle_move = wiggle(board, head)
+				wiggle_move = wiggle(data, board, head)
 				if move.cost < 100:
 					move = wiggle_move
 					move_name = 'wiggle ' + str(dist)
 					break
 
-	print head, move.nextCoord, move_name
-	print "Recommend next move", move_name, move.nextDirection
+	print "Recommend next move:", move_name, move.nextDirection, [move.nextCoord.x, move.nextCoord.y], "from head:", head
 
 	return move
 
@@ -166,13 +163,12 @@ def food(data, head, heatmap, board):
 
 	for snack in data['food']:
 		path = board.path(coord.Coord(head[0], head[1]), coord.Coord(snack[0], snack[1]))
-		print(path.cost, path.nextCoord, path.nextDirection)
 		heat = path.cost
 		if heat < cost:
 			best = path
 			cost = heat
 
-	if best is None:
+	if best is None or not util.is_valid_move(best, data):
 		return util.bad_move()
 
 	return best
@@ -189,7 +185,7 @@ def idle(board, data, head):
 
 	path = board.path(coord.Coord(head[0], head[1]), coord.Coord(target[0], target[1]))
 
-	if path is None:
+	if path is None or not util.is_valid_move(path, data):
 		return util.bad_move()
 
 	return path
@@ -208,20 +204,20 @@ def follow(data, head, board):
 
 	path = board.path(coord.Coord(head[0], head[1]), coord.Coord(target[0], target[1]))
 
-	if path is None:
+	if path is None or not util.is_valid_move(path, data):
 		return util.bad_move()
 
 	return path
 
 
-def wiggle(board, head, dist=5):
-	best = None
+def wiggle(data, board, head, dist=5):
+	best = util.bad_move()
 
 	for x in range(-dist, dist + 1):
 		for y in range(-dist, dist + 1):
 			if (abs(x) + abs(y)) == dist:
 				path = board.path(coord.Coord(head[0], head[1]), coord.Coord(head[0] + x, head[1] + y))
-				if best is None or path.cost < best.cost:
+				if path.cost < best.cost and not util.is_valid_move(path, data):
 					best = path
 
 	return best

@@ -21,7 +21,8 @@ class TimerPrint(Timer):
 		print self.msg + ":", str(round(self.interval * 1000, 3)) + "ms"
 
 
-def is_valid_move(possible_move, data):
+def is_valid_move(path, data):
+	possible_move = [path.nextCoord.x, path.nextCoord.y]
 	# at round 1, our head == our tail, so run this check before the next one
 	if possible_move == data['oursnake']['coords'][0]:
 		return False

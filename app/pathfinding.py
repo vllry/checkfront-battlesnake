@@ -5,6 +5,7 @@ import coord
 import util
 import constants
 
+PATHFINDING_DEBUG = False
 
 class Board:
 
@@ -13,12 +14,12 @@ class Board:
         return x, y
 
     def __init__(self, HeatMap):
-        print "Graphing..."
+        if PATHFINDING_DEBUG: print "Graphing..."
 
         height = len(HeatMap[0])
         width = len(HeatMap)
-        print "height :" + str(height)
-        print "width :" + str(width)
+        if PATHFINDING_DEBUG: print "height :" + str(height)
+        if PATHFINDING_DEBUG: print "width :" + str(width)
 
         self._graph = nx.Graph()
 
@@ -40,7 +41,7 @@ class Board:
                     self._graph.add_edge(Board._xyToId(x, y), plusY, weight=HeatMap[x][y] + HeatMap[x][y+1])
 
     def path(self, currentCoord, targetCoord):
-        print "Looking for path from x", currentCoord.x, "y", currentCoord.y, " to x", targetCoord.x, "y", targetCoord.y
+        if PATHFINDING_DEBUG: print "Looking for path from x", currentCoord.x, "y", currentCoord.y, " to x", targetCoord.x, "y", targetCoord.y
         path = None
 
         try:
@@ -51,7 +52,7 @@ class Board:
                 weight='weight'
             )
         except:
-            print "Failed to find any path"
+            print "Failed to find any path from x", currentCoord.x, "y", currentCoord.y, " to x", targetCoord.x, "y", targetCoord.y
             return util.bad_move()
 
         return Path(self._graph, path)
@@ -60,7 +61,7 @@ class Board:
 class Path:
     def __init__(self, graph, nodeList):
         # Todo: "unreachable"
-        print nodeList
+        if PATHFINDING_DEBUG: print "Nodelist:", nodeList
         self._nodes = nodeList
 
         self.cost = 0
@@ -95,4 +96,4 @@ class Path:
             else:
                 self.cost += weights[(next, cur)]
         self.cost -= constants.ourHeadWeight
-        print "cost:", self.cost
+        if PATHFINDING_DEBUG: print "cost:", self.cost
