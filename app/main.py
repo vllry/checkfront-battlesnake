@@ -147,12 +147,12 @@ def get_move(data, head, heatmap, board):
 		with util.TimerPrint("Wiggle time"):
 			for dist in range(MAX_WIGGLE, 1, -1):
 				wiggle_move = wiggle(data, board, head)
-				if move.cost < 100:
+				if wiggle_move.cost < 100:
 					move = wiggle_move
 					move_name = 'wiggle ' + str(dist)
 					break
 
-	print "Recommend next move:", move_name, move.nextDirection, [move.nextCoord.x, move.nextCoord.y], "from head:", head
+	print "Recommend next move:", move_name, move.nextDirection, move.nextCoord, "from head:", head
 
 	return move
 
