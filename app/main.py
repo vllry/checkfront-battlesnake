@@ -181,6 +181,11 @@ def idle(board, data, head):
 
 	target = oursnake[-1]
 	if (target == head):
+		if head[1] > 1:
+			target = [head[0], head[1] - 1]
+		else:
+			target = [head[0], head[1] + 1]
+	if target in oursnake[:-1]:
 		return util.bad_move()
 
 	path = board.path(coord.Coord(head[0], head[1]), coord.Coord(target[0], target[1]))
