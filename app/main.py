@@ -1,7 +1,7 @@
 import bottle
 import os
 import json
-import copy
+import coord
 import random
 import time
 import sys
@@ -75,49 +75,48 @@ def start():
 
 @bottle.post('/move')
 def move():
-	print "\n\n"
 	request_data_2018 = bottle.request.json
 	
 	request_data = reformat_request_to_2017(request_data_2018)
 	
+	print "\n\n\n-======- Starting",request_data["oursnake"]["name"], "- move()"
 	if PRINT_REQUESTS:
 		print(json.dumps(request_data, sort_keys=True, indent=4, separators=(',',': '))) # Uncomment this to save a full game state
-	return main_logic(request_data)
+	
+	with util.TimerPrint("-======- End of " + request_data["oursnake"]["name"] + "'s move(). Full Request Time"):
+		return main_logic(request_data)
 
 def main_logic(data):
-	time_start_request = time.clock()
-
 	with util.TimerPrint("Heatmap Time"):
 		heatmap = gen_heatmap(data)
-	with util.TimerPrint("Graph Time"):
-		graph = pathfinding.graphify(heatmap)
 	print_heatmap(heatmap)
+	with util.TimerPrint("Graph Time"):
+		board = pathfinding.Board(heatmap)
 
 	rand = random.randint(0, 2)
 	taunt = taunts[rand]
 
-	move = get_move(data, data['ourhead'], heatmap, graph)
+	move = get_move(data, data['ourhead'], heatmap, board)
 
 	if move in data['oursnake']['coords']:
 		pass  # TODO: WTF DON'T MOVE INTO OURSELF!!
 
 	response = {
-		'move': get_direction_from_target_headpos(data['ourhead'], move)
+		'move': move.nextDirection
 	}
 	if random.randint(0, 10) == 0:
 		response['taunt'] = taunt
 
-	print "\nFull Request Time:", str(round((time.clock() - time_start_request) * 1000, 3)) + "ms"
 	return response
 
 
-def get_move(data, head, heatmap, graph):
+def get_move(data, head, heatmap, board):
 	# try different algorithms and pick our favourite one
 
-	follow_move, follow_cost = follow(data, head, heatmap, graph)
-	idle_move, idle_cost = idle(data, head, heatmap, graph)
-	food_move, food_cost = food(data, head, heatmap, graph)
-	print "follow", follow_cost, "idle", idle_cost, "food", food_cost
+	follow_move = follow(data, head, board)
+	idle_move = idle(board, data, head)
+	food_move = food(data, head, heatmap, board)
+	print "Possible Move Thoughts: follow", follow_move.cost, "idle", idle_move.cost, "food", food_move.cost
 
 	longestSnakeLength = 0
 	for snake in data['snakes']:
@@ -125,62 +124,57 @@ def get_move(data, head, heatmap, graph):
 			longestSnakeLength = len(snake['coords'])
 
 	# Worst case scenario: Go 1 square in a direction that doesn't immediately kill it
-	move = move_idle_dumb(data, head, heatmap, graph)
+	move = move_idle_dumb(data, head, heatmap, board)
 	move_name = 'default'
 
-	if (int(data['oursnake']['health_points']) < starvation_Limit and food_cost < starvation_Cost):
+	if (int(data['oursnake']['health_points']) < starvation_Limit and food_move.cost < starvation_Cost):
 		move = food_move
 		move_name = 'food-hungry'
-	elif (int(data['oursnake']['health_points']) < hunger_Limit and food_cost < hunger_Cost):
+	elif (int(data['oursnake']['health_points']) < hunger_Limit and food_move.cost < hunger_Cost):
 		move = food_move
 		move_name = 'food-easy-pickings'
-	elif ((longestSnakeLength + preferred_Snek_Length_modifer) >= len(data['oursnake']['coords']) and food_cost < greedy_food_Cost):
+	elif ((longestSnakeLength + preferred_Snek_Length_modifer) >= len(data['oursnake']['coords']) and food_move.cost < greedy_food_Cost):
 		move = food_move
 		move_name = 'food-greedy'
-	elif (follow_cost < follow_Cost_Limit):
+	elif (follow_move.cost < follow_Cost_Limit):
 		move = follow_move
 		move_name = 'follow'
-	elif (idle_cost < idle_Cost_Limit):
+	elif (idle_move.cost < idle_Cost_Limit):
 		move = idle_move
 		move_name = 'idle'
 	else:
 		# Running out of options... find the longest path
 		with util.TimerPrint("Wiggle time"):
 			for dist in range(MAX_WIGGLE, 1, -1):
-				wiggle_move, wiggle_cost = wiggle(data, head, heatmap, graph, dist)
-				if wiggle_cost < 100:
+				wiggle_move = wiggle(data, board, head)
+				if move.cost < 100:
 					move = wiggle_move
 					move_name = 'wiggle ' + str(dist)
 					break
 
-	print head, move, move_name
-	print "Recommend next move", move_name, get_direction_from_target_headpos(head, move), str(move)
+	print "Recommend next move:", move_name, move.nextDirection, [move.nextCoord.x, move.nextCoord.y], "from head:", head
 
 	return move
 
 
-def food(data, head, heatmap, graph):
-	move = [0, 0]
-	shortest = []
-	cost = 9995
+def food(data, head, heatmap, board):
+	best = None
+	cost = 9996
+
 	for snack in data['food']:
-		pathdata = pathfinding.cheapest_path(graph, heatmap, head, snack, data)
-		#print "Food idea: ", pathdata
-		nextcoord = pathdata['nextPos']
-		full_shortest_path = pathdata['path']
-		heat = pathdata['cost']
+		path = board.path(coord.Coord(head[0], head[1]), coord.Coord(snack[0], snack[1]))
+		heat = path.cost
 		if heat < cost:
-			shortest = full_shortest_path
-			move = nextcoord
+			best = path
 			cost = heat
 
-	if not util.is_valid_move(move, data):
+	if best is None or not util.is_valid_move(best, data):
 		return util.bad_move()
 
-	return move, cost
+	return best
 
 
-def idle(data, head, heatmap, graph):
+def idle(board, data, head):
 	oursnake = data['oursnake']['coords']
 	if (len(oursnake) == 0):
 		return util.bad_move()  # didn't find our snake, bail
@@ -189,16 +183,14 @@ def idle(data, head, heatmap, graph):
 	if (target == head):
 		return util.bad_move()
 
-	pathdata = pathfinding.cheapest_path(graph, heatmap, head, target, data)
-	move = pathdata['nextPos']
-	cost = pathdata['cost']
+	path = board.path(coord.Coord(head[0], head[1]), coord.Coord(target[0], target[1]))
 
-	if not util.is_valid_move(move, data):
+	if path is None or not util.is_valid_move(path, data):
 		return util.bad_move()
 
-	return move, cost
+	return path
 
-def follow(data, head, heatmap, graph):
+def follow(data, head, board):
 	target = False
 
 	for snake in data['snakes']:
@@ -210,42 +202,41 @@ def follow(data, head, heatmap, graph):
 		# No tails nearby
 		return util.bad_move()
 
-	pathdata = pathfinding.cheapest_path(graph, heatmap, head, target, data)
-	move = pathdata['nextPos']
-	cost = pathdata['cost']
+	path = board.path(coord.Coord(head[0], head[1]), coord.Coord(target[0], target[1]))
 
-	if not util.is_valid_move(move, data):
+	if path is None or not util.is_valid_move(path, data):
 		return util.bad_move()
 
-	return move, cost
+	return path
 
-def wiggle(data, head, heatmap, graph, dist=5):
-	cost = 9000
-	move = head
+
+def wiggle(data, board, head, dist=5):
+	best = util.bad_move()
+
 	for x in range(-dist, dist + 1):
 		for y in range(-dist, dist + 1):
 			if (abs(x) + abs(y)) == dist:
-				pathdata = pathfinding.cheapest_path(graph, heatmap, head, [head[0] + x, head[1] + y], data)
-				if pathdata['cost'] < cost:
-					cost = pathdata['cost']
-					move = pathdata['nextPos']
-	return move, cost
+				path = board.path(coord.Coord(head[0], head[1]), coord.Coord(head[0] + x, head[1] + y))
+				if path.cost < best.cost and not util.is_valid_move(path, data):
+					best = path
 
-def move_idle_dumb(data, head, heatmap, graph):
-	left_pathdata = pathfinding.cheapest_path(graph, heatmap, head, [max(0, head[0] - 1), head[1]], data)
-	right_pathdata = pathfinding.cheapest_path(graph, heatmap, head, [min(len(heatmap)-1, head[0] + 1), head[1]], data)
-	up_pathdata = pathfinding.cheapest_path(graph, heatmap, head, [head[0], max(0, head[1] - 1)], data)
-	down_pathdata = pathfinding.cheapest_path(graph, heatmap, head, [head[0], min(len(heatmap[0])-1, head[1] + 1)], data)
+	return best
 
-	smallest = min(left_pathdata['cost'], right_pathdata['cost'], up_pathdata['cost'], down_pathdata['cost'])
-	if smallest == left_pathdata['cost']:
-		return left_pathdata['nextPos']
-	if smallest == right_pathdata['cost']:
-		return right_pathdata['nextPos']
-	if smallest == up_pathdata['cost']:
-		return up_pathdata['nextPos']
-	if smallest == down_pathdata['cost']:
-		return down_pathdata['nextPos']
+def move_idle_dumb(data, head, heatmap, board):
+	left_pathdata = board.path(coord.Coord(head[0], head[1]), coord.Coord(max(0, head[0] - 1), head[1]))
+	right_pathdata = board.path(coord.Coord(head[0], head[1]), coord.Coord(min(len(heatmap) - 1, head[0] + 1), head[1]))
+	up_pathdata = board.path(coord.Coord(head[0], head[1]), coord.Coord(head[0], max(0, head[1] - 1)))
+	down_pathdata = board.path(coord.Coord(head[0], head[1]), coord.Coord(head[0], min(len(heatmap[0]) - 1, head[1] + 1)))
+
+	smallest = min(left_pathdata.cost, right_pathdata.cost, up_pathdata.cost, down_pathdata.cost)
+	if smallest == left_pathdata.cost:
+		return left_pathdata
+	if smallest == right_pathdata.cost:
+		return right_pathdata
+	if smallest == up_pathdata.cost:
+		return up_pathdata
+	if smallest == down_pathdata.cost:
+		return down_pathdata
 
 
 def get_direction_from_target_headpos(head, move):

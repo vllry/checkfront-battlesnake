@@ -1,4 +1,5 @@
 import time
+import pathfinding
 
 
 class Timer:
@@ -20,8 +21,8 @@ class TimerPrint(Timer):
 		print self.msg + ":", str(round(self.interval * 1000, 3)) + "ms"
 
 
-def is_valid_move(possible_move, data):
-
+def is_valid_move(path, data):
+	possible_move = [path.nextCoord.x, path.nextCoord.y]
 	# at round 1, our head == our tail, so run this check before the next one
 	if possible_move == data['oursnake']['coords'][0]:
 		return False
@@ -35,11 +36,18 @@ def is_valid_move(possible_move, data):
 
 	if possible_move[0] < 0 or possible_move[0] >= data['width'] or possible_move[1] < 0 or possible_move[1] >= data['height']:
 		return False
+
 	return True
 
 def dist(a, b):
 	return abs(b[0] - a[0]) + abs(b[1] - a[1])
 
+class BadPath:
+	def __init__(self):
+		self.cost = 9995
+		self.length = 900
+		self.nextCoord = None
+		self.nextDirection = "NO"
 
 def bad_move():
-	return False, 9995
+	return BadPath()

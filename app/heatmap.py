@@ -1,5 +1,6 @@
 import copy, math
 import util
+import constants
 
 def default_heatmap(width, height):
 	heatmap = []
@@ -80,7 +81,7 @@ def gen_heatmap(requestdata, maxturns=9, use_rings=True):
 				if heat != 1:
 					if not use_rings or ((abs(x-oursnakeHead[0]) + abs(y-oursnakeHead[1])) == turn):
 						final[x][y] += heat
-		final[oursnakeHead[0]][oursnakeHead[1]] = 975
+		final[oursnakeHead[0]][oursnakeHead[1]] = constants.ourHeadWeight
 		final[oursnakeNeck[0]][oursnakeNeck[1]] = 950
 
 	if 'walls' in state:
@@ -100,7 +101,7 @@ def print_heatmap(heatmap):
 			else:
 				text += "%3d " % num
 		text += "\n"
-	print text, "\n"
+	print text
 
 def test_generate(maxturns=10, print_map=False):
 	test_map_data = {u'snakes': [{u'health_points': 83, u'taunt': u'', u'coords': [[2, 3], [2, 2], [1, 2], [1, 1], [1, 0], [0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [1, 4]], u'name': u'', u'id': u'aed42e3b-57b9-4da5-9c0c-41925714b173'}, {u'health_points': 86, u'taunt': u'', u'coords': [[4, 17], [3, 17], [3, 18], [4, 18], [5, 18], [6, 18], [7, 18], [8, 18], [8, 17], [7, 17]], u'name': u'', u'id': u'aa6bc9d4-c7cd-40c1-a045-9788bf0d962c'}, {u'health_points': 65, u'taunt': u'', u'coords': [[9, 2], [10, 2], [11, 2], [12, 2], [13, 2], [13, 3], [12, 3], [11, 3], [10, 3], [9, 3], [9, 4], [10, 4], [11, 4], [12, 4], [13, 4]], u'name': u'', u'id': u'd1844ab4-48f2-4e28-acdb-325f9778ae2c'}, {u'health_points': 95, u'taunt': u'', u'coords': [[12, 12], [13, 12], [14, 12], [14, 13], [13, 13], [12, 13], [12, 14], [12, 15], [12, 16], [12, 17], [13, 17], [14, 17], [15, 17]], u'name': u'', u'id': u'ff76b2df-a959-4022-9ea2-92786b9c8d2a'}, {u'health_points': 91, u'taunt': u'', u'coords': [[18, 11], [18, 12], [17, 12], [16, 12], [15, 12], [15, 11], [15, 10], [14, 10], [13, 10], [13, 9], [14, 9], [15, 9], [16, 9], [17, 9]], u'name': u'', u'id': u'ad706415-db7d-4620-9daa-f73cb649bee2'}, {u'health_points': 80, u'taunt': u'', u'coords': [[19, 7], [19, 8], [18, 8], [18, 7], [18, 6], [18, 5], [18, 4], [18, 3], [19, 3], [19, 4], [19, 5]], u'name': u'', u'id': u'b8f1cc5c-3585-41f3-8b36-e0fa9af8126b'}, {u'health_points': 97, u'taunt': u'0xA9FF33', u'coords': [[9, 11], [8, 11], [8, 10], [7, 10], [6, 10], [6, 9], [6, 8], [6, 7], [5, 7], [5, 6], [5, 5], [5, 4], [4, 4], [3, 4], [3, 3]], u'name': u'Snakeoverflow', u'id': u'92dd5ef9-ba87-4987-882f-2511b97ec514'}], u'turn': 146, u'food': [[11, 14], [8, 3], [0, 5]], u'height': 20, u'width': 20, 'oursnake': {u'health_points': 97, u'taunt': u'0xA9FF33', u'coords': [[9, 11], [8, 11], [8, 10], [7, 10], [6, 10], [6, 9], [6, 8], [6, 7], [5, 7], [5, 6], [5, 5], [5, 4], [4, 4], [3, 4], [3, 3]], u'name': u'Snakeoverflow', u'id': u'92dd5ef9-ba87-4987-882f-2511b97ec514'}, u'dead_snakes': [], u'game_id': u'098c3eab-ea8b-4367-90d5-708ed4c49ade', u'you': u'92dd5ef9-ba87-4987-882f-2511b97ec514', 'ourhead': [9, 11]}
