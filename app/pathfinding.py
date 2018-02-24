@@ -97,3 +97,11 @@ class Path:
                 self.cost += weights[(next, cur)]
         self.cost -= constants.ourHeadWeight
         if PATHFINDING_DEBUG: print "cost:", self.cost
+    def __gt__(self, other):
+        return self.cost > other.cost
+    def __lt__(self, other):
+        return self.cost < other.cost
+    def __ge__(self, other):
+        return self.cost >= other.cost
+    def __le__(self, other):
+        return self.cost <= other.cost

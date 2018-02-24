@@ -115,10 +115,11 @@ def main_logic(data):
 def get_move(data, head, heatmap, board):
 	# try different algorithms and pick our favourite one
 
-	follow_move = follow(data, head, board)
-	idle_move = idle(board, data, head)
+	tail_follow_move = follow(data, head, board)
+	our_tail_move = consider_our_tail(board, data, head)
 	food_move = food(data, head, heatmap, board)
-	print "Possible Move Thoughts: follow", follow_move.cost, "idle", idle_move.cost, "food", food_move.cost
+	corner_move = consider_corners(data, head, board)
+	print "Possible Move Thoughts: tail_follow", tail_follow_move.cost, "our_tail", our_tail_move.cost, "food", food_move.cost, "corner", corner_move.cost
 
 	longestSnakeLength = 0
 	for snake in data['snakes']:
@@ -141,17 +142,21 @@ def get_move(data, head, heatmap, board):
 	elif ((longestSnakeLength + preferred_Snek_Length_modifer) >= len(data['oursnake']['coords']) and food_move.cost < greedy_food_Cost):
 		move = food_move
 		move_name = 'food-greedy'
-	elif (follow_move.cost < follow_Cost_Limit):
-		move = follow_move
-		move_name = 'follow'
-	elif (idle_move.cost < idle_Cost_Limit):
-		move = idle_move
-		move_name = 'idle'
+	elif (min(tail_follow_move, corner_move, our_tail_move).cost < 95):
+		our_tail_move.cost *= 1.5 # "go to our own tail" is boring and kinda risky, lets make it less attractive
+		move = min(tail_follow_move, corner_move, our_tail_move)
+		if move == tail_follow_move:
+			move_name = "follow-adjacent-tail"
+		elif move == corner_move:
+			move_name = "go-to-corner"
+		else:
+			move_name = "idly-go-to-our-tail"
 	else:
 		# Running out of options... find the longest path
 		with util.TimerPrint("Wiggle time"):
 			for dist in range(MAX_WIGGLE, 1, -1):
 				wiggle_move = wiggle(data, board, head)
+				#print "found a wiggle", wiggle_move.cost, dist, wiggle_move.nextDirection
 				if wiggle_move.cost < 100:
 					move = wiggle_move
 					move_name = 'wiggle ' + str(dist)
@@ -179,7 +184,7 @@ def food(data, head, heatmap, board):
 	return best
 
 
-def idle(board, data, head):
+def consider_our_tail(board, data, head):
 	oursnake = data['oursnake']['coords']
 	if (len(oursnake) == 0):
 		return util.bad_move()  # didn't find our snake, bail
@@ -219,6 +224,17 @@ def follow(data, head, board):
 
 	return path
 
+DISTANCE_IS_GOOD_MULTIPLIER = 3
+def consider_corners(data, head, board):
+	best = util.bad_move()
+	best_distance = 1
+	for corner in [[1,1], [1, data['height'] - 2], [data['width'] - 2, 1], [data['width'] - 2, data['height'] - 2] ]:
+		path = board.path(coord.Coord(head[0], head[1]), coord.Coord(corner[0], corner[1]))
+		distance = util.dist(head, corner)
+		if (path.cost - distance*DISTANCE_IS_GOOD_MULTIPLIER) < (best.cost - best_distance*DISTANCE_IS_GOOD_MULTIPLIER) and distance >= best_distance:
+			best = path
+			best_distance = distance
+	return best
 
 def wiggle(data, board, head, dist=5):
 	best = util.bad_move()
